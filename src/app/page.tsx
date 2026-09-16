@@ -32,11 +32,13 @@ export default function LeadExtractorDashboard() {
   const [maxResults, setMaxResults] = useState(10);
   const [apiToken, setApiToken] = useState('');
   const [actorId, setActorId] = useState('apify/google-search-scraper');
+  const [provider, setProvider] = useState<'apify' | 'serpapi'>('apify');
+  const [serpApiKey, setSerpApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusStep, setStatusStep] = useState<string>('');
   const [results, setResults] = useState<ExtractedLead[]>([]);
-  const [sourceType, setSourceType] = useState<'apify' | 'fallback_simulation' | null>(null);
+  const [sourceType, setSourceType] = useState<'apify' | 'serpapi' | 'fallback_simulation' | null>(null);
   const [actorUsed, setActorUsed] = useState<string>('');
   const [executionTime, setExecutionTime] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,9 +48,11 @@ export default function LeadExtractorDashboard() {
   // Load saved token from localStorage if available
   useEffect(() => {
     const savedToken = localStorage.getItem('APIFY_API_TOKEN');
-    if (savedToken) {
-      setApiToken(savedToken);
-    }
+    if (savedToken) setApiToken(savedToken);
+    const savedSerpKey = localStorage.getItem('SERPAPI_API_KEY');
+    if (savedSerpKey) setSerpApiKey(savedSerpKey);
+    const savedProvider = localStorage.getItem('SEARCH_PROVIDER') as any;
+    if (savedProvider) setProvider(savedProvider);
   }, []);
 
   const handleSaveToken = (val: string) => {
@@ -58,6 +62,20 @@ export default function LeadExtractorDashboard() {
     } else {
       localStorage.removeItem('APIFY_API_TOKEN');
     }
+  };
+
+  const handleSaveSerpKey = (val: string) => {
+    setSerpApiKey(val);
+    if (val) {
+      localStorage.setItem('SERPAPI_API_KEY', val);
+    } else {
+      localStorage.removeItem('SERPAPI_API_KEY');
+    }
+  };
+
+  const handleSetProvider = (p: 'apify' | 'serpapi') => {
+    setProvider(p);
+    localStorage.setItem('SEARCH_PROVIDER', p);
   };
 
   const copyToClipboard = (text: string, id: string) => {
@@ -76,7 +94,8 @@ export default function LeadExtractorDashboard() {
     setStatusStep('Initializing agent request...');
 
     try {
-      setTimeout(() => setStatusStep('Querying Apify Actor and harvesting profile data...'), 700);
+      const providerLabel = provider === 'serpapi' ? 'SerpAPI (Google Engine)' : 'Apify Actor';
+      setTimeout(() => setStatusStep(`Querying ${providerLabel} and harvesting profile data...`), 700);
       setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience, Resume)...'), 2200);
 
       const res = await fetch('/api/extract', {
@@ -85,8 +104,10 @@ export default function LeadExtractorDashboard() {
         body: JSON.stringify({
           keyword: keyword.trim(),
           maxResults,
+          provider,
           apiToken: apiToken.trim() || undefined,
           actorId,
+          serpApiKey: serpApiKey.trim() || undefined,
         }),
       });
 
@@ -193,8 +214,8 @@ export default function LeadExtractorDashboard() {
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg glass-card hover:bg-slate-800 transition text-slate-300 hover:text-white border border-slate-700/60"
           >
             <Settings2 className="w-4 h-4 text-indigo-400" />
-            Apify Settings
-            {apiToken && <span className="w-2 h-2 rounded-full bg-emerald-400"></span>}
+            Engine Settings
+            {(apiToken || serpApiKey) && <span className="w-2 h-2 rounded-full bg-emerald-400"></span>}
           </button>
 
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-300 font-mono">
@@ -210,50 +231,102 @@ export default function LeadExtractorDashboard() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Key className="w-4 h-4 text-indigo-400" />
-              Apify API Configuration
+              Extraction Engine & API Settings
             </h3>
             <span className="text-xs text-slate-400">Client-side & Serverless compatible</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
+          {/* Provider Selection Tabs */}
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              Select Extraction Provider
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSetProvider('apify')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
+                  provider === 'apify'
+                    ? 'bg-indigo-600/80 border-indigo-500 text-white shadow-sm'
+                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Apify Scraper
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetProvider('serpapi')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
+                  provider === 'serpapi'
+                    ? 'bg-indigo-600/80 border-indigo-500 text-white shadow-sm'
+                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                SerpAPI (100 Free Google Searches/mo)
+              </button>
+            </div>
+          </div>
+
+          {provider === 'apify' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-1">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Apify API Token (Optional if set in Vercel .env)
+                </label>
+                <div className="relative">
+                  <input
+                    id="apify-token-input"
+                    type="password"
+                    value={apiToken}
+                    onChange={(e) => handleSaveToken(e.target.value)}
+                    placeholder="apify_api_..."
+                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Leave empty for preview sandbox, or get token from <a href="https://console.apify.com/account/integrations" target="_blank" rel="noreferrer" className="text-indigo-400 underline">Apify Console</a>.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Apify Actor ID
+                </label>
+                <select
+                  id="actor-select"
+                  value={actorId}
+                  onChange={(e) => setActorId(e.target.value)}
+                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                >
+                  <option value="apify/google-search-scraper">apify/google-search-scraper (Public Profiles X-Ray)</option>
+                  <option value="curious_coder/linkedin-profile-scraper">curious_coder/linkedin-profile-scraper</option>
+                  <option value="dev_rohit/linkedin-profile-data-extractor">dev_rohit/linkedin-profile-data-extractor</option>
+                </select>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Google Search Scraper provides universal access with zero cookie restrictions.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm pt-1">
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                Apify API Token (Optional if set in Vercel .env)
+                SerpAPI Key (Free 100 searches/mo)
               </label>
-              <div className="relative">
+              <div className="relative max-w-lg">
                 <input
-                  id="apify-token-input"
+                  id="serpapi-key-input"
                   type="password"
-                  value={apiToken}
-                  onChange={(e) => handleSaveToken(e.target.value)}
-                  placeholder="apify_api_..."
+                  value={serpApiKey}
+                  onChange={(e) => handleSaveSerpKey(e.target.value)}
+                  placeholder="Paste your SerpAPI key..."
                   className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                Leave empty to test with simulated sandbox preview, or paste your token from <a href="https://console.apify.com/account/integrations" target="_blank" rel="noreferrer" className="text-indigo-400 underline">Apify Console</a>.
+                Get your free API key at <a href="https://serpapi.com/users/sign_up" target="_blank" rel="noreferrer" className="text-indigo-400 underline">serpapi.com</a> (Includes 100 free Google searches every month).
               </p>
             </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Apify Actor ID
-              </label>
-              <select
-                id="actor-select"
-                value={actorId}
-                onChange={(e) => setActorId(e.target.value)}
-                className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
-              >
-                <option value="apify/google-search-scraper">apify/google-search-scraper (Public Profiles X-Ray)</option>
-                <option value="curious_coder/linkedin-profile-scraper">curious_coder/linkedin-profile-scraper</option>
-                <option value="dev_rohit/linkedin-profile-data-extractor">dev_rohit/linkedin-profile-data-extractor</option>
-              </select>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Recommended: Google Search Scraper provides universal access with zero cookie restrictions.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -389,7 +462,7 @@ export default function LeadExtractorDashboard() {
                 {executionTime ? `${(executionTime / 1000).toFixed(1)}s` : '< 2s'}
               </p>
               <span className="text-[11px] text-slate-400 truncate block mt-1" title={actorUsed}>
-                Actor: {actorUsed.split('/')[1] || actorUsed}
+                Engine: {actorUsed.split('/')[1] || actorUsed}
               </span>
             </div>
           </div>
@@ -599,7 +672,7 @@ export default function LeadExtractorDashboard() {
           </button>
         </div>
         <div className="text-[11px] text-slate-400">
-          <strong>Environment Variable:</strong> In your Vercel project dashboard, add <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> with your Apify API key.
+          <strong>Environment Variable:</strong> In your Vercel project dashboard, add <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> for production access.
         </div>
       </section>
     </div>
