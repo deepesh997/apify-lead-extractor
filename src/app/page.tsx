@@ -21,6 +21,7 @@ import {
   AlertCircle,
   FileSpreadsheet,
   FileCode,
+  FileText,
   ShieldCheck,
   Server
 } from 'lucide-react';
@@ -76,7 +77,7 @@ export default function LeadExtractorDashboard() {
 
     try {
       setTimeout(() => setStatusStep('Querying Apify Actor and harvesting profile data...'), 700);
-      setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience)...'), 2200);
+      setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience, Resume)...'), 2200);
 
       const res = await fetch('/api/extract', {
         method: 'POST',
@@ -112,13 +113,14 @@ export default function LeadExtractorDashboard() {
   // Export handlers
   const exportToCSV = () => {
     if (results.length === 0) return;
-    const headers = ['Name', 'Phone Number', 'Email', 'Designation', 'Experience', 'Company', 'Location', 'Source URL'];
+    const headers = ['Name', 'Phone Number', 'Email', 'Designation', 'Experience', 'Resume / CV URL', 'Company', 'Location', 'Source URL'];
     const rows = results.map(r => [
       `"${(r.name || '').replace(/"/g, '""')}"`,
       `"${(r.phoneNumber || '').replace(/"/g, '""')}"`,
       `"${(r.email || '').replace(/"/g, '""')}"`,
       `"${(r.designation || '').replace(/"/g, '""')}"`,
       `"${(r.experience || '').replace(/"/g, '""')}"`,
+      `"${(r.resumeUrl || 'Not attached').replace(/"/g, '""')}"`,
       `"${(r.company || '').replace(/"/g, '""')}"`,
       `"${(r.location || '').replace(/"/g, '""')}"`,
       `"${(r.sourceUrl || '').replace(/"/g, '""')}"`,
@@ -178,7 +180,7 @@ export default function LeadExtractorDashboard() {
                 Apify Lead Extractor Agent
               </h1>
               <p className="text-xs sm:text-sm text-slate-400">
-                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation & Experience</span> by keyword
+                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation, Experience & Resume</span> by keyword
               </p>
             </div>
           </div>
@@ -329,7 +331,7 @@ export default function LeadExtractorDashboard() {
             <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
             <div>
               <p className="font-medium text-white">{statusStep}</p>
-              <p className="text-xs text-indigo-400/80">Scanning target profiles, resolving contact channels & calculating experience...</p>
+              <p className="text-xs text-indigo-400/80">Scanning target profiles, resolving contact channels, calculating experience & fetching resumes...</p>
             </div>
           </div>
         )}
@@ -346,7 +348,7 @@ export default function LeadExtractorDashboard() {
       {results.length > 0 && (
         <section className="space-y-6">
           {/* Summary & Metrics bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="glass-card p-4 rounded-2xl border border-slate-800">
               <span className="text-xs text-slate-400">Total Extracted</span>
               <p className="text-2xl font-bold text-white mt-1">{results.length}</p>
@@ -361,7 +363,7 @@ export default function LeadExtractorDashboard() {
                 {results.filter(r => r.email && !r.email.includes('Not')).length}
               </p>
               <span className="text-[11px] text-slate-400 mt-1">
-                {Math.round((results.filter(r => r.email && !r.email.includes('Not')).length / results.length) * 100)}% email discovery rate
+                {Math.round((results.filter(r => r.email && !r.email.includes('Not')).length / results.length) * 100)}% email rate
               </span>
             </div>
 
@@ -370,7 +372,15 @@ export default function LeadExtractorDashboard() {
               <p className="text-2xl font-bold text-purple-300 mt-1">
                 {results.filter(r => r.phoneNumber && !r.phoneNumber.includes('Available')).length}
               </p>
-              <span className="text-[11px] text-slate-400 mt-1">Standardized E.164/Intl</span>
+              <span className="text-[11px] text-slate-400 mt-1">Direct contact numbers</span>
+            </div>
+
+            <div className="glass-card p-4 rounded-2xl border border-slate-800">
+              <span className="text-xs text-slate-400">Resumes / CVs</span>
+              <p className="text-2xl font-bold text-emerald-300 mt-1">
+                {results.filter(r => r.resumeUrl).length}
+              </p>
+              <span className="text-[11px] text-slate-400 mt-1">PDF & web portfolios</span>
             </div>
 
             <div className="glass-card p-4 rounded-2xl border border-slate-800">
@@ -429,6 +439,7 @@ export default function LeadExtractorDashboard() {
                     <th className="py-3.5 px-4">Experience</th>
                     <th className="py-3.5 px-4">Email</th>
                     <th className="py-3.5 px-4">Phone Number</th>
+                    <th className="py-3.5 px-4">Resume / CV</th>
                     <th className="py-3.5 px-4 text-right">Source</th>
                   </tr>
                 </thead>
@@ -519,7 +530,25 @@ export default function LeadExtractorDashboard() {
                           </div>
                         </td>
 
-                        {/* 6. Profile / Source */}
+                        {/* 6. Resume / CV */}
+                        <td className="py-4 px-4">
+                          {lead.resumeUrl ? (
+                            <a
+                              href={lead.resumeUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 hover:text-emerald-200 border border-emerald-700/50 text-[11px] font-medium transition"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              View CV
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-slate-500 italic">Not attached</span>
+                          )}
+                        </td>
+
+                        {/* 7. Profile / Source */}
                         <td className="py-4 px-4 text-right">
                           {lead.sourceUrl ? (
                             <a
