@@ -39,9 +39,9 @@ export async function runApifyExtraction({
     let items: Record<string, any>[] = [];
 
     if (actorId === 'apify/google-search-scraper' || actorId.includes('google-search')) {
-      // Build targeted X-ray search query to harvest public professional profiles with contact info
+      // Build targeted X-ray search query to harvest public professional profiles with contact info and resumes
       const queries = [
-        `site:linkedin.com/in/ "${keyword}" ("email" OR "@gmail.com" OR "contact" OR "phone")`,
+        `site:linkedin.com/in/ "${keyword}" ("email" OR "@gmail.com" OR "contact" OR "phone" OR "resume" OR "cv")`,
         `site:linkedin.com/in/ "${keyword}" "years of experience"`,
       ].join('\n');
 
@@ -135,6 +135,7 @@ export function generateDemoLeads(keyword: string, count: number = 5): Extracted
       company: 'Databricks',
       location: 'San Francisco, CA',
       sourceUrl: 'https://linkedin.com/in/sarah-chen-demo',
+      resumeUrl: 'https://read.cv/sarahchen',
       snippet: `Senior leader specializing in ${keyword}. Built multi-region microservices handling 50k RPS. Contact: sarah.chen.tech@gmail.com | (415) 890-2145`,
     },
     {
@@ -146,6 +147,7 @@ export function generateDemoLeads(keyword: string, count: number = 5): Extracted
       company: 'Amazon Web Services',
       location: 'Seattle, WA',
       sourceUrl: 'https://linkedin.com/in/marcus-vance-demo',
+      resumeUrl: 'https://flowcv.me/marcus-vance-cloud',
       snippet: `Passionate about scalable workflows and ${keyword}. 7 yrs exp designing high-availability systems. Reach out at m.vance.dev@outlook.com.`,
     },
     {
@@ -168,6 +170,7 @@ export function generateDemoLeads(keyword: string, count: number = 5): Extracted
       company: 'TCS Digital Labs',
       location: 'Bengaluru, India',
       sourceUrl: 'https://linkedin.com/in/arjun-patel-demo',
+      resumeUrl: 'https://drive.google.com/file/d/1A2B3C4D_arjun_cv/view',
       snippet: `Full stack consultant with 8+ years experience specializing in modern web ecosystems and ${keyword}. Email: arjun.patel.tech@gmail.com`,
     },
     {
@@ -190,6 +193,7 @@ export function generateDemoLeads(keyword: string, count: number = 5): Extracted
       company: 'Station F',
       location: 'Paris, France',
       sourceUrl: 'https://linkedin.com/in/chloe-dubois-demo',
+      resumeUrl: 'https://notion.site/chloe-dubois-cv-2026',
       snippet: `Data strategist & consultant in ${keyword}. 5 yrs exp driving digital transformation. Inquiries: chloe.dubois@freemail.io`,
     }
   ];
