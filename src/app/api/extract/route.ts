@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runApifyExtraction } from '@/lib/apify';
+import { runSerpApiExtraction } from '@/lib/serpapi';
 import { ExtractionRequest, ExtractionResponse } from '@/types';
 
 // Allow Vercel serverless function up to 60s runtime if on Pro/Enterprise, or standard on Hobby
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body: ExtractionRequest = await req.json();
-    const { keyword, maxResults = 10, apiToken, actorId } = body;
+    const { keyword, maxResults = 10, apiToken, actorId, provider = 'apify', serpApiKey } = body;
 
     if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0) {
       return NextResponse.json(
@@ -30,14 +31,23 @@ export async function POST(req: NextRequest) {
     const trimmedKeyword = keyword.trim();
     const sanitizedLimit = Math.max(1, Math.min(Number(maxResults) || 10, 50));
 
-    console.log(`[API /extract] Extracting leads for keyword: "${trimmedKeyword}", limit: ${sanitizedLimit}`);
+    console.log(`[API /extract] Provider: ${provider}, Keyword: "${trimmedKeyword}", Limit: ${sanitizedLimit}`);
 
-    const result = await runApifyExtraction({
-      keyword: trimmedKeyword,
-      maxResults: sanitizedLimit,
-      apiToken,
-      actorId,
-    });
+    let result;
+    if (provider === 'serpapi') {
+      result = await runSerpApiExtraction({
+        keyword: trimmedKeyword,
+        maxResults: sanitizedLimit,
+        apiKey: serpApiKey,
+      });
+    } else {
+      result = await runApifyExtraction({
+        keyword: trimmedKeyword,
+        maxResults: sanitizedLimit,
+        apiToken,
+        actorId,
+      });
+    }
 
     const executionTimeMs = Date.now() - startTime;
 
@@ -48,7 +58,7 @@ export async function POST(req: NextRequest) {
       source: result.source,
       actorUsed: result.actorUsed,
       executionTimeMs,
-      message: `Successfully extracted ${result.leads.length} leads for "${trimmedKeyword}".`,
+      message: `Successfully extracted ${result.leads.length} leads for "${trimmedKeyword}" via ${provider.toUpperCase()}.`,
     } satisfies ExtractionResponse);
   } catch (err: any) {
     console.error('[API /extract] Error:', err);
