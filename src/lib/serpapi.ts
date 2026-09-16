@@ -1,6 +1,5 @@
 import { ExtractedLead } from '@/types';
 import { normalizeApifyItem } from './extractor';
-import { runFreeExtraction } from './freeEngine';
 
 interface SerpApiOptions {
   keyword: string;
@@ -9,24 +8,19 @@ interface SerpApiOptions {
 }
 
 /**
- * Extract leads using SerpAPI (Google Search Engine)
- * If no key is provided, falls back seamlessly to the free zero-key extraction engine.
+ * Extract leads using SerpAPI (Real Live Google Search Engine)
  */
 export async function runSerpApiExtraction({
   keyword,
   maxResults = 10,
   apiKey,
-}: SerpApiOptions): Promise<{ leads: ExtractedLead[]; source: 'serpapi' | 'fallback_simulation'; actorUsed: string }> {
+}: SerpApiOptions): Promise<{ leads: ExtractedLead[]; source: 'serpapi'; actorUsed: string }> {
   const key = apiKey || process.env.SERPAPI_API_KEY;
 
   if (!key) {
-    console.log('[SerpAPI] No API key provided, running free zero-key extraction engine...');
-    const freeRes = await runFreeExtraction({ keyword, maxResults });
-    return {
-      leads: freeRes.leads,
-      source: 'serpapi',
-      actorUsed: 'serpapi-free-mode (zero key required)',
-    };
+    throw new Error(
+      'SERPAPI_API_KEY is required for real Google search scraping. Please add SERPAPI_API_KEY to your server .env.local / Vercel Environment Variables, or enter your key in Settings.'
+    );
   }
 
   // Targeted Google X-ray query for profiles, contact info, and resumes

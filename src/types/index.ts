@@ -17,16 +17,15 @@ export interface ExtractionRequest {
   maxResults?: number;
   apiToken?: string;
   actorId?: string;
-  provider?: 'free' | 'apify' | 'serpapi';
+  provider?: 'apify' | 'serpapi';
   serpApiKey?: string;
-  includeMockFallback?: boolean;
 }
 
 export interface ExtractionResponse {
   success: boolean;
   leads: ExtractedLead[];
   count: number;
-  source: 'free' | 'apify' | 'serpapi' | 'fallback_simulation';
+  source: 'apify' | 'serpapi';
   actorUsed?: string;
   executionTimeMs: number;
   message?: string;
