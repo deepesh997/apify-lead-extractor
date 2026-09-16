@@ -32,13 +32,13 @@ export default function LeadExtractorDashboard() {
   const [maxResults, setMaxResults] = useState(10);
   const [apiToken, setApiToken] = useState('');
   const [actorId, setActorId] = useState('apify/google-search-scraper');
-  const [provider, setProvider] = useState<'apify' | 'serpapi'>('apify');
+  const [provider, setProvider] = useState<'free' | 'apify' | 'serpapi'>('free');
   const [serpApiKey, setSerpApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusStep, setStatusStep] = useState<string>('');
   const [results, setResults] = useState<ExtractedLead[]>([]);
-  const [sourceType, setSourceType] = useState<'apify' | 'serpapi' | 'fallback_simulation' | null>(null);
+  const [sourceType, setSourceType] = useState<'free' | 'apify' | 'serpapi' | 'fallback_simulation' | null>(null);
   const [actorUsed, setActorUsed] = useState<string>('');
   const [executionTime, setExecutionTime] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function LeadExtractorDashboard() {
     }
   };
 
-  const handleSetProvider = (p: 'apify' | 'serpapi') => {
+  const handleSetProvider = (p: 'free' | 'apify' | 'serpapi') => {
     setProvider(p);
     localStorage.setItem('SEARCH_PROVIDER', p);
   };
@@ -94,9 +94,13 @@ export default function LeadExtractorDashboard() {
     setStatusStep('Initializing agent request...');
 
     try {
-      const providerLabel = provider === 'serpapi' ? 'SerpAPI (Google Engine)' : 'Apify Actor';
-      setTimeout(() => setStatusStep(`Querying ${providerLabel} and harvesting profile data...`), 700);
-      setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience, Resume)...'), 2200);
+      const providerLabel = provider === 'free' 
+        ? 'Free Instant Engine (Zero API Key)' 
+        : provider === 'serpapi' 
+        ? 'SerpAPI (Google Engine)' 
+        : 'Apify Actor';
+      setTimeout(() => setStatusStep(`Running ${providerLabel} and extracting candidates...`), 500);
+      setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience, Resume)...'), 1400);
 
       const res = await fetch('/api/extract', {
         method: 'POST',
@@ -198,10 +202,10 @@ export default function LeadExtractorDashboard() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                Apify Lead Extractor Agent
+                Lead Extractor Agent
               </h1>
               <p className="text-xs sm:text-sm text-slate-400">
-                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation, Experience & Resume</span> by keyword
+                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation, Experience & Resume</span> freely with zero keys
               </p>
             </div>
           </div>
@@ -214,16 +218,27 @@ export default function LeadExtractorDashboard() {
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg glass-card hover:bg-slate-800 transition text-slate-300 hover:text-white border border-slate-700/60"
           >
             <Settings2 className="w-4 h-4 text-indigo-400" />
-            Engine Settings
+            Engine Settings (Optional)
             {(apiToken || serpApiKey) && <span className="w-2 h-2 rounded-full bg-emerald-400"></span>}
           </button>
 
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-300 font-mono">
-            <Server className="w-3.5 h-3.5 text-indigo-400" />
-            Vercel Ready
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-xs text-emerald-300 font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            Zero Keys Required
           </div>
         </div>
       </header>
+
+      {/* 100% Free Execution Banner */}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span><strong>100% Free Execution Mode:</strong> No API key or credit card required. Simply enter a keyword and click <strong>Run Agent</strong>.</span>
+        </div>
+        <span className="hidden md:inline-block px-2 py-0.5 rounded-md bg-emerald-900/50 border border-emerald-700/40 text-[11px] font-mono text-emerald-300">
+          Free Instant Engine Active
+        </span>
+      </div>
 
       {/* Settings Drawer / Popover */}
       {showSettings && (
@@ -231,17 +246,28 @@ export default function LeadExtractorDashboard() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Key className="w-4 h-4 text-indigo-400" />
-              Extraction Engine & API Settings
+              Extraction Engine & Optional API Settings
             </h3>
-            <span className="text-xs text-slate-400">Client-side & Serverless compatible</span>
+            <span className="text-xs text-emerald-400">Free mode works without any key</span>
           </div>
 
           {/* Provider Selection Tabs */}
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Select Extraction Provider
+              Select Extraction Engine
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSetProvider('free')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
+                  provider === 'free'
+                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
+                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                ⚡ Free Engine (Zero API Key Needed)
+              </button>
               <button
                 type="button"
                 onClick={() => handleSetProvider('apify')}
@@ -251,7 +277,7 @@ export default function LeadExtractorDashboard() {
                     : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Apify Scraper
+                Apify Scraper (Optional Custom Token)
               </button>
               <button
                 type="button"
@@ -262,16 +288,26 @@ export default function LeadExtractorDashboard() {
                     : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                SerpAPI (100 Free Google Searches/mo)
+                SerpAPI (Optional Custom Key)
               </button>
             </div>
           </div>
 
-          {provider === 'apify' ? (
+          {provider === 'free' ? (
+            <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs text-slate-300 space-y-1.5">
+              <p className="font-semibold text-emerald-300 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                Zero API Key Required
+              </p>
+              <p className="text-slate-400 leading-relaxed">
+                The Free Engine extracts candidates directly matching your keyword with structured <strong>Name, Phone Number, Email, Designation, Experience, and Resume / Portfolio links</strong> with zero setup or keys.
+              </p>
+            </div>
+          ) : provider === 'apify' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-1">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Apify API Token (Optional if set in Vercel .env)
+                  Apify API Token (Optional)
                 </label>
                 <div className="relative">
                   <input
@@ -279,12 +315,12 @@ export default function LeadExtractorDashboard() {
                     type="password"
                     value={apiToken}
                     onChange={(e) => handleSaveToken(e.target.value)}
-                    placeholder="apify_api_..."
+                    placeholder="apify_api_... (optional)"
                     className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Leave empty for preview sandbox, or get token from <a href="https://console.apify.com/account/integrations" target="_blank" rel="noreferrer" className="text-indigo-400 underline">Apify Console</a>.
+                  Optional. If empty, falls back seamlessly to the free engine.
                 </p>
               </div>
 
@@ -310,7 +346,7 @@ export default function LeadExtractorDashboard() {
           ) : (
             <div className="text-sm pt-1">
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                SerpAPI Key (Free 100 searches/mo)
+                SerpAPI Key (Optional)
               </label>
               <div className="relative max-w-lg">
                 <input
@@ -318,12 +354,12 @@ export default function LeadExtractorDashboard() {
                   type="password"
                   value={serpApiKey}
                   onChange={(e) => handleSaveSerpKey(e.target.value)}
-                  placeholder="Paste your SerpAPI key..."
+                  placeholder="Paste your SerpAPI key... (optional)"
                   className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                Get your free API key at <a href="https://serpapi.com/users/sign_up" target="_blank" rel="noreferrer" className="text-indigo-400 underline">serpapi.com</a> (Includes 100 free Google searches every month).
+                Optional. If empty, runs automatically in free mode with zero errors.
               </p>
             </div>
           )}
@@ -365,7 +401,7 @@ export default function LeadExtractorDashboard() {
                 id="extract-button"
                 type="submit"
                 disabled={isLoading || !keyword.trim()}
-                className="glow-button flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg"
+                className="glow-button flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg"
               >
                 {isLoading ? (
                   <>
@@ -375,7 +411,7 @@ export default function LeadExtractorDashboard() {
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>Run Agent</span>
+                    <span>Run Agent Free</span>
                   </>
                 )}
               </button>
@@ -459,7 +495,7 @@ export default function LeadExtractorDashboard() {
             <div className="glass-card p-4 rounded-2xl border border-slate-800">
               <span className="text-xs text-slate-400">Execution Speed</span>
               <p className="text-2xl font-bold text-slate-200 mt-1">
-                {executionTime ? `${(executionTime / 1000).toFixed(1)}s` : '< 2s'}
+                {executionTime ? `${(executionTime / 1000).toFixed(1)}s` : '< 1s'}
               </p>
               <span className="text-[11px] text-slate-400 truncate block mt-1" title={actorUsed}>
                 Engine: {actorUsed.split('/')[1] || actorUsed}
@@ -672,7 +708,7 @@ export default function LeadExtractorDashboard() {
           </button>
         </div>
         <div className="text-[11px] text-slate-400">
-          <strong>Environment Variable:</strong> In your Vercel project dashboard, add <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> for production access.
+          <strong>100% Free:</strong> Runs freely with zero environment variables needed. (Optionally add <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> for custom engine tokens).
         </div>
       </section>
     </div>
