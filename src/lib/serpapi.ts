@@ -1,5 +1,6 @@
 import { ExtractedLead } from '@/types';
 import { normalizeApifyItem } from './extractor';
+import { runFreeExtraction } from './freeEngine';
 
 interface SerpApiOptions {
   keyword: string;
@@ -9,7 +10,7 @@ interface SerpApiOptions {
 
 /**
  * Extract leads using SerpAPI (Google Search Engine)
- * SerpAPI offers 100 free searches per month with personal free plan.
+ * If no key is provided, falls back seamlessly to the free zero-key extraction engine.
  */
 export async function runSerpApiExtraction({
   keyword,
@@ -19,7 +20,13 @@ export async function runSerpApiExtraction({
   const key = apiKey || process.env.SERPAPI_API_KEY;
 
   if (!key) {
-    throw new Error('SERPAPI_API_KEY is missing. Please provide your SerpApi key in Settings or .env');
+    console.log('[SerpAPI] No API key provided, running free zero-key extraction engine...');
+    const freeRes = await runFreeExtraction({ keyword, maxResults });
+    return {
+      leads: freeRes.leads,
+      source: 'serpapi',
+      actorUsed: 'serpapi-free-mode (zero key required)',
+    };
   }
 
   // Targeted Google X-ray query for profiles, contact info, and resumes

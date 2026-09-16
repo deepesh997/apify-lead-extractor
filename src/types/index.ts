@@ -17,7 +17,7 @@ export interface ExtractionRequest {
   maxResults?: number;
   apiToken?: string;
   actorId?: string;
-  provider?: 'apify' | 'serpapi';
+  provider?: 'free' | 'apify' | 'serpapi';
   serpApiKey?: string;
   includeMockFallback?: boolean;
 }
@@ -26,7 +26,7 @@ export interface ExtractionResponse {
   success: boolean;
   leads: ExtractedLead[];
   count: number;
-  source: 'apify' | 'serpapi' | 'fallback_simulation';
+  source: 'free' | 'apify' | 'serpapi' | 'fallback_simulation';
   actorUsed?: string;
   executionTimeMs: number;
   message?: string;

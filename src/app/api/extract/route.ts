@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runApifyExtraction } from '@/lib/apify';
 import { runSerpApiExtraction } from '@/lib/serpapi';
+import { runFreeExtraction } from '@/lib/freeEngine';
 import { ExtractionRequest, ExtractionResponse } from '@/types';
 
 // Allow Vercel serverless function up to 60s runtime if on Pro/Enterprise, or standard on Hobby
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body: ExtractionRequest = await req.json();
-    const { keyword, maxResults = 10, apiToken, actorId, provider = 'apify', serpApiKey } = body;
+    const { keyword, maxResults = 10, apiToken, actorId, provider = 'free', serpApiKey } = body;
 
     if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0) {
       return NextResponse.json(
@@ -40,12 +41,18 @@ export async function POST(req: NextRequest) {
         maxResults: sanitizedLimit,
         apiKey: serpApiKey,
       });
-    } else {
+    } else if (provider === 'apify') {
       result = await runApifyExtraction({
         keyword: trimmedKeyword,
         maxResults: sanitizedLimit,
         apiToken,
         actorId,
+      });
+    } else {
+      // Free zero-key engine
+      result = await runFreeExtraction({
+        keyword: trimmedKeyword,
+        maxResults: sanitizedLimit,
       });
     }
 
