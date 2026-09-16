@@ -32,13 +32,13 @@ export default function LeadExtractorDashboard() {
   const [maxResults, setMaxResults] = useState(10);
   const [apiToken, setApiToken] = useState('');
   const [actorId, setActorId] = useState('apify/google-search-scraper');
-  const [provider, setProvider] = useState<'free' | 'apify' | 'serpapi'>('free');
+  const [provider, setProvider] = useState<'apify' | 'serpapi'>('apify');
   const [serpApiKey, setSerpApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusStep, setStatusStep] = useState<string>('');
   const [results, setResults] = useState<ExtractedLead[]>([]);
-  const [sourceType, setSourceType] = useState<'free' | 'apify' | 'serpapi' | 'fallback_simulation' | null>(null);
+  const [sourceType, setSourceType] = useState<'apify' | 'serpapi' | null>(null);
   const [actorUsed, setActorUsed] = useState<string>('');
   const [executionTime, setExecutionTime] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function LeadExtractorDashboard() {
     const savedSerpKey = localStorage.getItem('SERPAPI_API_KEY');
     if (savedSerpKey) setSerpApiKey(savedSerpKey);
     const savedProvider = localStorage.getItem('SEARCH_PROVIDER') as any;
-    if (savedProvider) setProvider(savedProvider);
+    if (savedProvider === 'apify' || savedProvider === 'serpapi') setProvider(savedProvider);
   }, []);
 
   const handleSaveToken = (val: string) => {
@@ -73,7 +73,7 @@ export default function LeadExtractorDashboard() {
     }
   };
 
-  const handleSetProvider = (p: 'free' | 'apify' | 'serpapi') => {
+  const handleSetProvider = (p: 'apify' | 'serpapi') => {
     setProvider(p);
     localStorage.setItem('SEARCH_PROVIDER', p);
   };
@@ -94,13 +94,11 @@ export default function LeadExtractorDashboard() {
     setStatusStep('Initializing agent request...');
 
     try {
-      const providerLabel = provider === 'free' 
-        ? 'Free Instant Engine (Zero API Key)' 
-        : provider === 'serpapi' 
+      const providerLabel = provider === 'serpapi' 
         ? 'SerpAPI (Google Engine)' 
-        : 'Apify Actor';
-      setTimeout(() => setStatusStep(`Running ${providerLabel} and extracting candidates...`), 500);
-      setTimeout(() => setStatusStep('Normalizing entities (Name, Email, Phone, Designation, Experience, Resume)...'), 1400);
+        : 'Apify Scraper';
+      setTimeout(() => setStatusStep(`Connecting to ${providerLabel} and scraping real web data...`), 400);
+      setTimeout(() => setStatusStep('Harvesting organic profile results & extracting contact channels...'), 1500);
 
       const res = await fetch('/api/extract', {
         method: 'POST',
@@ -205,7 +203,7 @@ export default function LeadExtractorDashboard() {
                 Lead Extractor Agent
               </h1>
               <p className="text-xs sm:text-sm text-slate-400">
-                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation, Experience & Resume</span> freely with zero keys
+                Extract <span className="text-indigo-400 font-medium">Name, Phone, Email, Designation, Experience & Resume</span> from real live web sources
               </p>
             </div>
           </div>
@@ -218,25 +216,25 @@ export default function LeadExtractorDashboard() {
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg glass-card hover:bg-slate-800 transition text-slate-300 hover:text-white border border-slate-700/60"
           >
             <Settings2 className="w-4 h-4 text-indigo-400" />
-            Engine Settings (Optional)
+            Scraper Settings
             {(apiToken || serpApiKey) && <span className="w-2 h-2 rounded-full bg-emerald-400"></span>}
           </button>
 
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-xs text-emerald-300 font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            Zero Keys Required
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-300 font-mono">
+            <Server className="w-3.5 h-3.5 text-indigo-400" />
+            Live Scraper
           </div>
         </div>
       </header>
 
-      {/* 100% Free Execution Banner */}
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs">
+      {/* Real Scraping Info Banner */}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 text-indigo-300 text-xs">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span><strong>100% Free Execution Mode:</strong> No API key or credit card required. Simply enter a keyword and click <strong>Run Agent</strong>.</span>
+          <Globe className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+          <span><strong>100% Real Data Scraping:</strong> Extracts real public candidate profiles & contact info from Google/LinkedIn with zero dummy data.</span>
         </div>
-        <span className="hidden md:inline-block px-2 py-0.5 rounded-md bg-emerald-900/50 border border-emerald-700/40 text-[11px] font-mono text-emerald-300">
-          Free Instant Engine Active
+        <span className="hidden md:inline-block px-2 py-0.5 rounded-md bg-indigo-900/50 border border-indigo-700/40 text-[11px] font-mono text-indigo-300">
+          Real Web Harvest
         </span>
       </div>
 
@@ -246,68 +244,51 @@ export default function LeadExtractorDashboard() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Key className="w-4 h-4 text-indigo-400" />
-              Extraction Engine & Optional API Settings
+              Scraping Engine & API Credentials
             </h3>
-            <span className="text-xs text-emerald-400">Free mode works without any key</span>
+            <span className="text-xs text-slate-400">Server & Client compatible</span>
           </div>
 
           {/* Provider Selection Tabs */}
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Select Extraction Engine
+              Select Scraping Engine
             </label>
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleSetProvider('free')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
-                  provider === 'free'
-                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
-                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                ⚡ Free Engine (Zero API Key Needed)
-              </button>
               <button
                 type="button"
                 onClick={() => handleSetProvider('apify')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
                   provider === 'apify'
-                    ? 'bg-indigo-600/80 border-indigo-500 text-white shadow-sm'
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
                     : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Apify Scraper (Optional Custom Token)
+                Apify Scraper (Google/LinkedIn X-Ray)
               </button>
               <button
                 type="button"
                 onClick={() => handleSetProvider('serpapi')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ${
                   provider === 'serpapi'
-                    ? 'bg-indigo-600/80 border-indigo-500 text-white shadow-sm'
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
                     : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                SerpAPI (Optional Custom Key)
+                SerpAPI (Google Engine)
               </button>
             </div>
           </div>
 
-          {provider === 'free' ? (
-            <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs text-slate-300 space-y-1.5">
-              <p className="font-semibold text-emerald-300 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                Zero API Key Required
-              </p>
-              <p className="text-slate-400 leading-relaxed">
-                The Free Engine extracts candidates directly matching your keyword with structured <strong>Name, Phone Number, Email, Designation, Experience, and Resume / Portfolio links</strong> with zero setup or keys.
-              </p>
-            </div>
-          ) : provider === 'apify' ? (
+          <p className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+            💡 <strong>Pro-tip:</strong> To let any user scrape real data freely without typing an API key, set <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> in your server's <code className="text-indigo-300 font-mono">.env.local</code> or Vercel Environment Variables.
+          </p>
+
+          {provider === 'apify' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-1">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Apify API Token (Optional)
+                  Apify API Token
                 </label>
                 <div className="relative">
                   <input
@@ -315,12 +296,12 @@ export default function LeadExtractorDashboard() {
                     type="password"
                     value={apiToken}
                     onChange={(e) => handleSaveToken(e.target.value)}
-                    placeholder="apify_api_... (optional)"
+                    placeholder="apify_api_... (or set in .env.local)"
                     className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Optional. If empty, falls back seamlessly to the free engine.
+                  Get your free personal token at <a href="https://console.apify.com/account/integrations" target="_blank" rel="noreferrer" className="text-indigo-400 underline">console.apify.com/account/integrations</a>.
                 </p>
               </div>
 
@@ -339,14 +320,14 @@ export default function LeadExtractorDashboard() {
                   <option value="dev_rohit/linkedin-profile-data-extractor">dev_rohit/linkedin-profile-data-extractor</option>
                 </select>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Google Search Scraper provides universal access with zero cookie restrictions.
+                  Google Search Scraper provides universal live search access with zero cookie restrictions.
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-sm pt-1">
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                SerpAPI Key (Optional)
+                SerpAPI Key (100 Free searches/mo)
               </label>
               <div className="relative max-w-lg">
                 <input
@@ -354,12 +335,12 @@ export default function LeadExtractorDashboard() {
                   type="password"
                   value={serpApiKey}
                   onChange={(e) => handleSaveSerpKey(e.target.value)}
-                  placeholder="Paste your SerpAPI key... (optional)"
+                  placeholder="Paste your SerpAPI key... (or set in .env.local)"
                   className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                Optional. If empty, runs automatically in free mode with zero errors.
+                Get your free API key at <a href="https://serpapi.com/manage-api-key" target="_blank" rel="noreferrer" className="text-indigo-400 underline">serpapi.com/manage-api-key</a>.
               </p>
             </div>
           )}
@@ -411,7 +392,7 @@ export default function LeadExtractorDashboard() {
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>Run Agent Free</span>
+                    <span>Run Scraping Agent</span>
                   </>
                 )}
               </button>
@@ -708,7 +689,7 @@ export default function LeadExtractorDashboard() {
           </button>
         </div>
         <div className="text-[11px] text-slate-400">
-          <strong>100% Free:</strong> Runs freely with zero environment variables needed. (Optionally add <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> for custom engine tokens).
+          <strong>Real Web Scraping:</strong> Set <code className="text-indigo-300 font-mono">APIFY_API_TOKEN</code> or <code className="text-indigo-300 font-mono">SERPAPI_API_KEY</code> in your Vercel Environment Variables so anyone can scrape live profiles freely without entering keys in the UI.
         </div>
       </section>
     </div>
