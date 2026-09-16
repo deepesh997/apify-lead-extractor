@@ -8,6 +8,7 @@ export interface ExtractedLead {
   company?: string;
   location?: string;
   sourceUrl?: string;
+  resumeUrl?: string;
   snippet?: string;
 }
 

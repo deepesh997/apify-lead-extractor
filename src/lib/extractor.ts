@@ -139,6 +139,30 @@ export function extractExperience(item: Record<string, any>, fullText: string): 
   return 'Mid-to-Senior Level';
 }
 
+// Regex for detecting resume/CV or portfolio URLs
+const RESUME_URL_REGEX = /(https?:\/\/[^\s"'<>]*(?:drive\.google\.com[^\s"'<>]*|dropbox\.com[^\s"'<>]*|notion\.(?:so|site)[^\s"'<>]*|read\.cv\/[^\s"'<>]*|flowcv\.(?:me|com)[^\s"'<>]*|[^\s"'<>]+\.pdf\b))/i;
+
+/**
+ * Extract resume, CV, or document link from item or text
+ */
+export function extractResume(item: Record<string, any>, fullText: string): string | undefined {
+  if (item.resumeUrl && typeof item.resumeUrl === 'string') return item.resumeUrl.trim();
+  if (item.resume && typeof item.resume === 'string' && item.resume.startsWith('http')) return item.resume.trim();
+  if (item.cvUrl && typeof item.cvUrl === 'string') return item.cvUrl.trim();
+  if (item.cv && typeof item.cv === 'string' && item.cv.startsWith('http')) return item.cv.trim();
+  if (item.portfolioUrl && typeof item.portfolioUrl === 'string') return item.portfolioUrl.trim();
+  if (item.portfolio && typeof item.portfolio === 'string' && item.portfolio.startsWith('http')) return item.portfolio.trim();
+  if (item.website && typeof item.website === 'string' && item.website.startsWith('http')) return item.website.trim();
+
+  // Search in text for Drive links, PDF links, Read.cv, FlowCV, etc.
+  const resumeMatch = fullText.match(RESUME_URL_REGEX);
+  if (resumeMatch && resumeMatch[1]) {
+    return resumeMatch[1].trim();
+  }
+
+  return undefined;
+}
+
 /**
  * Universal parser converting any Apify Actor dataset item into a normalized ExtractedLead
  */
@@ -160,6 +184,7 @@ export function normalizeApifyItem(item: Record<string, any>, index: number): Ex
   const email = extractEmail(item, combinedText);
   const phoneNumber = extractPhoneNumber(item, combinedText);
   const experience = extractExperience(item, combinedText);
+  const resumeUrl = extractResume(item, combinedText);
 
   // Extract source url or profile link
   const sourceUrl = item.url || item.link || item.profileUrl || item.displayedUrl || undefined;
@@ -176,6 +201,7 @@ export function normalizeApifyItem(item: Record<string, any>, index: number): Ex
     company,
     location,
     sourceUrl,
+    resumeUrl,
     snippet: item.snippet || item.description || (item.headline ? `${item.headline}` : undefined),
   };
 }
